@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <style>
+	#Advisor_Questions{
+		display: none;
+	}
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+        #chatbox {
+            width: calc(100% - 75px);
+            margin: 20 auto;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user {
+            background-color: #e2f7cb;
+            align-self: flex-end;
+        }
+
+        .bot {
+            background-color: #c7d8ed;
+            align-self: flex-start;
+        }
+		.urls {
+			background-color: #D8DA7D;
+			align-self: flex-start;
+		}
+		
+        input[type="text"] {
+            width: calc(100% - 75px);
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #4caf50;
+            color: white;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .sending-message {
+            font-style: italic;
+            color: #888;
+            margin-top: 5px;
+        }
+		.thumbs {
+				margin-top: 5px;
+				display: flex;
+				gap: 10px;
+				justify-content: flex-end;
+			}
+
+		.thumbs button {
+			background: none;
+			border: none;
+			font-size: 20px;
+			cursor: pointer;
+		}
+		
+		#modeButtons {
+			position: fixed;
+			top: 10px;
+			right: 10px;
+		}
+		
+		.modeButton {
+			padding: 10px 15px;
+			margin: 5px;
+			border: none;
+			background-color: #141313;
+			color: white;
+			cursor: pointer;
+		}
+		
+		.modeButton.active {
+			background-color: #23C278;
+		}
+		
+		pre code {
+        display: block;
+        background-color: #f0f0f0;
+        padding: 10px;
+        border: 1px solid #1C1B1A;
+        border-radius: 5px;
+        font-family: monospace;
+        overflow-x: auto;
+    }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div id="modeButtons">
+        <button id="taBtn" class="modeButton" onclick="switchMode('TA')">TA</button>
+        <button id="advisorBtn" class="modeButton" onclick="switchMode('Advisor')">Advisor</button>
+    </div>
+    <h1>Welcome to the Furman Computer Science Chatbot (pre-release v0.01a)</h1>
+    <p><i>Under development by <b>Emirhan Gencer</b> and <b>Jack Patterson</b> during Summer 2024, advised by Dr. Fahad Sultan.</i><br/><br/>
+    This is currently based on GPT-3.5 and trained on basic information about the Computer Science department at Furman and <a href="https://fahadsultan.com/csc272">CSC-272 course syllabus</a>.</p>
+    <p><u> Use and trust information at your own risk!</u> This is not ready for prime time, yet.</p>
+    <p><i>Every query costs us around 0.33 cents, so around $1 for 300 queries. Please use mindfully and do not spam.</i></p>
+    
+
+    <p id="Advisor_Questions">
+    <b>Sample Queries (Advisor)</b><br/>
+    <a href="#" class="query">I am a freshman at Furman and am interested in some Computer Science courses. What can I take in Fall that have no pre-requisites?</a><br/>
+    <a href="#" class="query">What are the graduation requirements for Computer Science?</a><br/>
+    <a href="#" class="query">What is the difference between Computer Science and IT degrees at Furman?</a><br/>
+    <a href="#" class="query">What will I learn in CSC-272? Does it involve a project? If so, how much of the course grade is it worth?</a><br/> 
+    <a href="#" class="query">Who started the data analytics minor at Furman?</a><br/>
+    </p>
+    
+    <p id="TA_Questions">
+    <b>Sample Queries (TA)</b><br/>
+    <a href="#" class="query">What is the difference between worldviews of a probabilist and statistician?</a><br/>
+    <a href="#" class="query">If I have an 85 in the course right now, what do I need on the final to get an A?</a><br/>
+    <a href="#" class="query">When is the final exam for this course?</a><br/>
+    <a href="#" class="query">When is the next assignment due?</a><br/>
+    <a href="#" class="query">What is the textbook for the course?</a><br/>
+    <a href="#" class="query">Isn't logistic regression actually classification? Why is it called regression then?</a><br/>
+    <a href="#" class="query">Can you give me the URL for Bayes Theorem ?</a><br/>
+    <a href="#" class="query">How do I read a CSV file in pandas?</a><br/>
+    <a href="#" class="query">Can you give me some ideas for the course project, each with a public dataset? I like Mexican food and Soccer.</a><br/>
+    <a href="#" class="query">Can you help me identify the problem with this line of code: `pd.read_csv["test.csv"]` without giving away the answer</a><br/>
+    <a href="#" class="query">There was a question on the test about Classification. I said classification is used for predicting continuous variables. Why is this wrong?</a><br/>
+	<a href="#" class="query">How do I use seaborn to visualize a dataset? Explain with both text and code.</a><br/>
+    </p>
+
+
+    <div id="chatbox"></div>
+    	
+	<div style="display: flex; margin-top: 10px;">
+        <input type="text" id="userInput" placeholder="Type your prompts here....">
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+		<button id="eraseBtn" onclick="eraseMemory()">Erase Memory</button>
+    </div>
+	
+    <div id="sendingStatus" class="sending-message" style="display: none;">Sending...</div>
+	<ul id="urlsList"></ul>
+    <script>
+        $("a.query").click(function() {
+		$("#userInput")[0].value = this.text;
+		$("#sendBtn")[0].click();
+	});	
+	let context = getCookie("context");
+    if (!context) {
+        context = "This is the conversation history. If you ever think you don't know something, take a look at this.\n";
+        setCookie("context", context, 1);
+    }
+	var input = document.getElementById("userInput");
+		
+	input.addEventListener("keypress", function(event) {
+	  if (event.key === "Enter") {
+	    event.preventDefault();
+	    document.getElementById("sendBtn").click();
+	  }
+	});
+	let currentMode = 'TA'; 
+	
+	function switchMode(mode) {
+		currentMode = mode;
+		document.querySelectorAll('.modeButton').forEach(button => button.classList.remove('active'));
+		if (mode === 'TA') {
+			document.getElementById('taBtn').classList.add('active');
+			document.getElementById("TA_Questions").style.display = "block";
+			document.getElementById("Advisor_Questions").style.display = "none";
+		} else if (mode === 'Advisor') {
+			document.getElementById('advisorBtn').classList.add('active');
+			document.getElementById('Advisor_Questions').style.display = 'block';
+			document.getElementById("TA_Questions").style.display = "none";
+		}
+	}
+	switchMode('TA'); 
+	
+	async function sendMessage() {
+		const userInput = document.getElementById('userInput').value;
+		const sendingStatus = document.getElementById('sendingStatus');
+		sendingStatus.style.display = 'block';
+
+		try {
+			const location = currentMode === 'TA' ? "http://64.225.111.177:5000/chatTA": "http://64.225.111.177:5000/chatAdvisor";
+			const settings = {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ 'message': userInput, "context": context })
+			};
+			const fetchResponse = await fetch(location, settings);
+			if (!fetchResponse.ok) {
+				throw new Error(`HTTP error! Status: ${fetchResponse.status}`);
+			}
+			const data = await fetchResponse.json();
+			console.log(context);
+			context += "User:" + userInput + "\n";
+			context += "AI:" + (data.message["answer"] || '') + "\n";
+			setCookie("context", context, 1);
+
+			displayMessage(userInput, 'user');
+
+			if (data.message["answer"]) {
+				await displayMessageOutput(data.message["answer"], 'bot');
+			} else {
+				console.error('Error: No response received from server.');
+			}
+
+			if (data.message["urls"] && data.message["urls"].length > 0) {
+				await displayUrls(data.message["urls"]);
+			}
+
+		} catch (error) {
+			console.error('Error sending message:', error);
+		} finally {
+			sendingStatus.style.display = 'none';
+			document.getElementById('userInput').value = '';
+		}
+	}
+
+	function displayMessage(message, role) {
+		const chatbox = document.getElementById('chatbox');
+		const messageElem = document.createElement('div');
+		messageElem.className = `message ${role}`;
+		messageElem.innerText = message;
+		chatbox.appendChild(messageElem);
+		chatbox.scrollTop = chatbox.scrollHeight;
+	}
+	
+	async function displayMessageOutput(message, role) {
+		const chatbox = document.getElementById('chatbox');
+		const messageElem = document.createElement('div');
+		messageElem.className = `message ${role}`;
+		chatbox.appendChild(messageElem);
+
+		let feedbackAdded = false;
+
+		async function printStringByLetter(message, index = 0) {
+			if (index < message.length) {
+				if (message.slice(index, index + 3) === '```') {
+					index += 3;
+					let codeEndIndex = message.indexOf('```', index);
+					if (codeEndIndex === -1) codeEndIndex = message.length;
+					const codeContent = message.slice(index, codeEndIndex);
+					const codeElem = document.createElement('pre');
+					codeElem.innerHTML = `<code>${codeContent}</code>`;
+					messageElem.appendChild(codeElem);
+					index = codeEndIndex + 3;
+					await printStringByLetter(message, index);
+				} else {
+					if (message.slice(index, index + 2) === '**') {
+						index += 2;
+						const endBold = message.indexOf('**', index);
+						const boldContent = message.slice(index, endBold);
+						messageElem.innerHTML += `<b>${boldContent}</b>`;
+						index = endBold + 2;
+						messageElem.innerHTML += ' '; // Add a space after the bold text
+					} else if (message.slice(index, index + 1) === '*') {
+						index += 1;
+						const endItalic = message.indexOf('*', index);
+						const italicContent = message.slice(index, endItalic);
+						messageElem.innerHTML += `<i>${italicContent}</i>`;
+						index = endItalic + 1;
+						messageElem.innerHTML += ' '; // Add a space after the italic text
+					} else if (message.charAt(index) === '\n'){
+						messageElem.innerHTML += '<br>';
+						index++;
+					} else if (message.charAt(index) === '$') {
+						let mathEndIndex = message.indexOf('$', index + 1);
+						if (mathEndIndex === -1) mathEndIndex = message.length;
+						const mathContent = message.slice(index + 1, mathEndIndex);
+						const mathElem = document.createElement('span');
+						mathElem.innerHTML = `\\(${mathContent}\\)`;
+						messageElem.appendChild(mathElem);
+						index = mathEndIndex + 1;
+						await MathJax.typesetPromise([mathElem]);
+					} else {
+						messageElem.innerHTML += message.charAt(index);
+						index++;
+					}
+
+					let delay = 5;
+					if (message.charAt(index - 1) === ' ') {
+						delay = 15;
+					} else if (isPunctuation(message.charAt(index - 1))) {
+						delay = 25 + Math.random() * 200;
+					}
+
+					await new Promise(resolve => setTimeout(resolve, delay));
+					await printStringByLetter(message, index);
+				}
+			} else {
+				chatbox.scrollTop = chatbox.scrollHeight;
+				if (!feedbackAdded) {
+					addFeedbackButtons(messageElem);
+					feedbackAdded = true;
+				}
+				await MathJax.typesetPromise([messageElem]); // Ensure MathJax processes the entire message
+			}
+		}
+
+		function isPunctuation(char) {
+			const punctuationMarks = /[!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~]/;
+			return punctuationMarks.test(char);
+		}
+
+		await printStringByLetter(message);
+	}
+		
+	function addFeedbackButtons(messageElem) {
+		const thumbsContainer = document.createElement('div');
+		thumbsContainer.className = 'thumbs';
+		const thumbsUp = document.createElement('button');
+		thumbsUp.innerText = '👍';
+		thumbsUp.onclick = () => sendFeedback(messageElem.innerText, 'thumbs-up');
+		thumbsUp.textContent = '👍';
+		thumbsUp.className = 'feedback-button thumbs-up';
+		thumbsUp.onclick = () => handleFeedback('up');
+
+		const thumbsDown = document.createElement('button');
+		thumbsDown.innerText = '👎';
+		thumbsDown.onclick = () => sendFeedback(messageElem.innerText, 'thumbs-down');
+		thumbsContainer.appendChild(thumbsUp);
+		thumbsContainer.appendChild(thumbsDown);
+		thumbsDown.textContent = '👎';
+		thumbsDown.className = 'feedback-button thumbs-down';
+		thumbsDown.onclick = () => handleFeedback('down');
+
+		const feedbackContainer = document.createElement('div');
+		feedbackContainer.className = 'feedback-buttons';
+		feedbackContainer.appendChild(thumbsUp);
+		feedbackContainer.appendChild(thumbsDown);
+
+		messageElem.appendChild(thumbsContainer);
+		messageElem.appendChild(feedbackContainer);
+	}
+	async function sendFeedback(message, feedbackType) {
+		try {
+			const location = "http://64.225.111.177:5000/feedback";
+			const settings = {
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ message, feedbackType })
+			};
+			const response = await fetch(location, settings);
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			const data = await response.json();
+			console.log('Feedback sent:', data);
+		} catch (error) {
+			console.error('Error sending feedback:', error);
+		}
+	}
+	
+	async function displayUrls(urls) {
+		const chatbox = document.getElementById('chatbox');
+		const urlsContainer = document.createElement('div');
+		urlsContainer.classList.add('message', 'urls', 'bot');
+
+		const heading = document.createElement('p');
+		heading.textContent = 'Please check the below links for additional information:';
+		urlsContainer.appendChild(heading);
+
+		const ul = document.createElement('ul');
+
+		for (const url of urls.slice(0, 5)) {
+			const title = await fetchTitle(url);
+			const li = document.createElement('li');
+			const a = document.createElement('a');
+			a.href = url;
+			a.textContent = title || 'Link';
+			a.target = '_blank';
+			li.appendChild(a);
+			ul.appendChild(li);
+
+			urlsContainer.appendChild(ul);
+			chatbox.appendChild(urlsContainer);
+			chatbox.scrollTop = chatbox.scrollHeight;
+
+			await new Promise(resolve => setTimeout(resolve, 500));
+		}
+	}
+
+	async function fetchTitle(url) {
+		try {
+			const response = await fetch(url);
+			if (!response.ok) {
+				console.error('Failed to fetch URL:', response.status);
+				return 'Link';
+			}
+
+			const text = await response.text();
+			const doc = new DOMParser().parseFromString(text, 'text/html');
+			const title = doc.querySelector('title').innerText;
+			return title;
+		} catch (error) {
+			console.error('Error fetching title:', error);
+			return 'Link';
+		}
+	}
+	
+	function setCookie(name, value, days) {
+		const date = new Date();
+		date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+		const expires = "expires=" + date.toUTCString();
+		document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
+	}
+
+	function getCookie(name) {
+		const nameEQ = encodeURIComponent(name) + "=";
+		const ca = document.cookie.split(';');
+		for (let i = 0; i < ca.length; i++) {
+			let c = ca[i];
+			while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+			if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+		}
+		return null;
+	}
+	
+	function eraseMemory() {
+		context = "This is the conversation history. If you ever think you don't know something, take a look at this.\n";
+		setCookie("context", context, -1); 
+		const chatbox = document.getElementById('chatbox');
+		chatbox.innerHTML = '';
+	}
+    </script>
+</body>
+</html>
